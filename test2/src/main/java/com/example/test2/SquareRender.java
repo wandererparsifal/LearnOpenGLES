@@ -15,7 +15,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Created by yangming on 18-11-19.
  */
-public class MyRender implements GLSurfaceView.Renderer {
+public class SquareRender implements GLSurfaceView.Renderer {
 
     private String mVertexShaderCode
             = "attribute vec4 vPosition;\n" +
@@ -35,13 +35,10 @@ public class MyRender implements GLSurfaceView.Renderer {
             " }";
 
     float triangleCoords[] = {
-            0.5f, 0.5f, 0.0f, // top
-            0.0f, 0.0f, 0.0f, // bottom left
-            0.5f, 0.0f, 0.0f, // bottom right
-
-            0.5f, 0.0f, 0.0f, // top
-            0.0f, -0.5f, 0.0f, // bottom left
-            0.5f, -0.5f, 0.0f  // bottom right
+            -0.5f, 0.5f, 0.0f,
+            -0.5f, 0.0f, 0.0f,
+            0.0f, 0.5f, 0.0f,
+            0.0f, 0.0f, 0.0f,
     };
 
     //设置颜色
@@ -49,10 +46,7 @@ public class MyRender implements GLSurfaceView.Renderer {
             0.0f, 1.0f, 0.0f, 1.0f,
             1.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 1.0f, 1.0f,
-
-            1.0f, 0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f, 1.0f,
-            0.0f, 1.0f, 0.0f, 1.0f
+            0.5f, 0.5f, 0.5f, 1.0f,
     };
 
     private FloatBuffer mVertexBuffer;
@@ -156,7 +150,7 @@ public class MyRender implements GLSurfaceView.Renderer {
                 GLES20.GL_FLOAT, false,
                 0, mColorBuffer);
         //绘制三角形
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         //禁止顶点数组的句柄
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(mColorHandle);
