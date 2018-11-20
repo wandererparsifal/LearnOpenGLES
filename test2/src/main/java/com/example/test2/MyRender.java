@@ -2,6 +2,7 @@ package com.example.test2;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -20,8 +21,9 @@ public class MyRender implements GLSurfaceView.Renderer {
             = "attribute vec4 vPosition;\n" +
             "varying  vec4 vColor;\n" +
             "attribute vec4 aColor;\n" +
+            "uniform mat4 vMatrix;\n" +
             " void main() {\n" +
-            "     gl_Position = vPosition;\n" +
+            "     gl_Position = vMatrix*vPosition;\n" +
             "     vColor=aColor;\n" +
             " }";
 
@@ -54,6 +56,10 @@ public class MyRender implements GLSurfaceView.Renderer {
     private int mPositionHandle;
 
     private int mColorHandle;
+
+    private int mMatrixHandler;
+
+    private float[] mMVPMatrix = new float[16];
 
     /**
      * 加载制定shader的方法
@@ -118,11 +124,16 @@ public class MyRender implements GLSurfaceView.Renderer {
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
         //获取片元着色器的vColor成员的句柄
         mColorHandle = GLES20.glGetAttribLocation(mProgram, "aColor");
+
+        mMatrixHandler = GLES20.glGetUniformLocation(mProgram, "vMatrix");
     }
 
     private void draw() {
         //将程序加入到OpenGLES2.0环境
         GLES20.glUseProgram(mProgram);
+
+        //指定vMatrix的值
+        GLES20.glUniformMatrix4fv(mMatrixHandler, 1, false, mMVPMatrix, 0);
 
         //启用三角形顶点的句柄
         GLES20.glEnableVertexAttribArray(mPositionHandle);
@@ -151,6 +162,22 @@ public class MyRender implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
+
+        float[] mProjectMatrix = new float[16];
+        float[] mViewMatrix = new float[16];
+
+        //计算宽高比
+        float ratio = (float) width / height;
+        //设置透视投影 https://www.aliyun.com/jiaocheng/48374.html
+        Matrix.frustumM(mProjectMatrix, 0,
+                -ratio, ratio, -1, 1, 3, 7);
+        //设置相机位置 https://blog.csdn.net/kkae8643150/article/details/52805738 Matrix.setLookAtM解析
+        Matrix.setLookAtM(mViewMatrix, 0,
+                0, 0, 7.0f,
+                0f, 0f, 0f,
+                0f, 1.0f, 0.0f);
+        //计算变换矩阵
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
     }
 
     @Override
