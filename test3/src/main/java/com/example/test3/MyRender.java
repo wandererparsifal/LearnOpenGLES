@@ -8,6 +8,7 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -38,6 +39,7 @@ public class MyRender implements GLSurfaceView.Renderer {
             0.5f, 0.5f, 0.0f, // top
             0.0f, 0.0f, 0.0f, // bottom left
             0.5f, 0.0f, 0.0f, // bottom right
+            0.0f, 0.5f, 0.0f
     };
 
     //设置颜色
@@ -45,7 +47,15 @@ public class MyRender implements GLSurfaceView.Renderer {
             0.0f, 1.0f, 0.0f, 1.0f,
             1.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f
     };
+
+    final short index[] = {
+            0, 1, 2,
+            0, 1, 3
+    };
+
+    private ShortBuffer indexBuffer;
 
     private FloatBuffer mVertexBuffer;
 
@@ -108,6 +118,12 @@ public class MyRender implements GLSurfaceView.Renderer {
         mColorBuffer.put(color);
         mColorBuffer.position(0); //获取片元着色器的vColor成员的句柄
 
+        ByteBuffer cc = ByteBuffer.allocateDirect(index.length * 2);
+        cc.order(ByteOrder.nativeOrder());
+        indexBuffer = cc.asShortBuffer();
+        indexBuffer.put(index);
+        indexBuffer.position(0);
+
         int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, mVertexShaderCode);
         int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, mFragmentShaderCode);
 
@@ -119,6 +135,11 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glAttachShader(mProgram, fragmentShader);
         //连接到着色器程序
         GLES20.glLinkProgram(mProgram);
+
+        GLES20.glDetachShader(mProgram, vertexShader);
+        GLES20.glDetachShader(mProgram, fragmentShader);
+        GLES20.glDeleteShader(vertexShader);
+        GLES20.glDeleteShader(fragmentShader);
 
         //获取顶点着色器的vPosition成员句柄
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
@@ -148,7 +169,7 @@ public class MyRender implements GLSurfaceView.Renderer {
                 GLES20.GL_FLOAT, false,
                 0, mColorBuffer);
         //绘制三角形
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, index.length, GLES20.GL_UNSIGNED_SHORT, indexBuffer);
         //禁止顶点数组的句柄
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(mColorHandle);
