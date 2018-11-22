@@ -37,9 +37,9 @@ public class MyRender implements GLSurfaceView.Renderer {
 
     float triangleCoords[] = {
             1.0f, 1.0f, 0.0f, // top
-            0.0f, 0.0f, 0.0f, // bottom left
-            1.0f, 0.0f, 0.0f, // bottom right
-            0.0f, 1.0f, 0.0f
+            -1.0f, -1.0f, 0.0f, // bottom left
+            1.0f, -1.0f, 0.0f, // bottom right
+            -1.0f, 1.0f, 0.0f
     };
 
     //设置颜色
@@ -187,11 +187,27 @@ public class MyRender implements GLSurfaceView.Renderer {
         float[] mProjectMatrix = new float[16];
         float[] mViewMatrix = new float[16];
 
-        //计算宽高比
-        float ratio = (float) width / height;
-        //设置透视投影 https://www.aliyun.com/jiaocheng/48374.html
-        Matrix.frustumM(mProjectMatrix, 0,
-                -ratio, ratio, -1, 1, 3f, 7f);
+        if (width > height) {
+            float sWH = 1f;
+            float sWidthHeight = width / (float) height;
+            if (sWH > sWidthHeight) {
+                Matrix.orthoM(mProjectMatrix, 0,
+                        -sWidthHeight * sWH, sWidthHeight * sWH, -1, 1, 3, 7);
+            } else {
+                Matrix.orthoM(mProjectMatrix, 0,
+                        -sWidthHeight / sWH, sWidthHeight / sWH, -1, 1, 3, 7);
+            }
+        } else {
+            float sWH = 1f;
+            float sWidthHeight = width / (float) height;
+            if (sWH > sWidthHeight) {
+                Matrix.orthoM(mProjectMatrix, 0,
+                        -1, 1, -1 / sWidthHeight * sWH, 1 / sWidthHeight * sWH, 3, 7);
+            } else {
+                Matrix.orthoM(mProjectMatrix, 0,
+                        -1, 1, -sWH / sWidthHeight, sWH / sWidthHeight, 3, 7);
+            }
+        }
         //设置相机位置 https://blog.csdn.net/kkae8643150/article/details/52805738 Matrix.setLookAtM解析
         Matrix.setLookAtM(mViewMatrix, 0,
                 0, 0, 7f,
