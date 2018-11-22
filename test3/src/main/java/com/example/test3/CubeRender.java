@@ -204,9 +204,13 @@ public class CubeRender implements GLSurfaceView.Renderer {
         float ratio = (float) width / height;
         //设置透视投影 https://www.aliyun.com/jiaocheng/48374.html
         //设置透视投影
-        Matrix.frustumM(mProjectMatrix, 0, -ratio, ratio, -1, 1, 3, 20);
+        Matrix.frustumM(mProjectMatrix, 0,
+                -ratio, ratio, -1, 1, 3, 20);
         //设置相机位置
-        Matrix.setLookAtM(mViewMatrix, 0, 5.0f, 5.0f, 10.0f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+        Matrix.setLookAtM(mViewMatrix, 0,
+                5.0f, 5.0f, 10.0f,
+                0f, 0f, 0f,
+                0f, 1.0f, 0.0f);
         //计算变换矩阵
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
     }
