@@ -14,6 +14,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mGlv = findViewById(R.id.glv);
         mGlv.setEGLContextClientVersion(2);
-        mGlv.setRenderer(new MyRender());
+        mGlv.setRenderer(new CubeRender());
     }
 }
