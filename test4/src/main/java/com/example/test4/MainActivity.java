@@ -1,5 +1,6 @@
 package com.example.test4;
 
+import android.graphics.BitmapFactory;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -14,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mGlv = findViewById(R.id.glv);
         mGlv.setEGLContextClientVersion(2);
-        mGlv.setRenderer(new MyRender());
+        mGlv.setRenderer(new MyRender(BitmapFactory.decodeResource(getResources(), R.drawable.v2)));
+        mGlv.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 }

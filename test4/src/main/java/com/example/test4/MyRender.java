@@ -1,7 +1,9 @@
 package com.example.test4;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
@@ -20,52 +22,59 @@ public class MyRender implements GLSurfaceView.Renderer {
 
     private String mVertexShaderCode
             = "attribute vec4 vPosition;\n" +
-            "varying  vec4 vColor;\n" +
-            "attribute vec4 aColor;\n" +
-            "uniform mat4 vMatrix;\n" +
-            " void main() {\n" +
-            "     gl_Position = vMatrix*vPosition;\n" +
-            "     vColor=aColor;\n" +
-            " }";
+            "    attribute vec2 vCoordinate;\n" +
+            "    uniform mat4 vMatrix;\n" +
+            "\n" +
+            "    varying vec2 aCoordinate;\n" +
+            "\n" +
+            "    void main(){\n" +
+            "        gl_Position=vMatrix*vPosition;\n" +
+            "        aCoordinate=vCoordinate;\n" +
+            "    }";
 
     private String mFragmentShaderCode
             = "precision mediump float;\n" +
-            " varying vec4 vColor;\n" +
-            " void main() {\n" +
-            "     gl_FragColor = vColor;\n" +
-            " }";
+            "\n" +
+            "    uniform sampler2D vTexture;\n" +
+            "    varying vec2 aCoordinate;\n" +
+            "\n" +
+            "    void main(){\n" +
+            "        gl_FragColor=texture2D(vTexture,aCoordinate);\n" +
+            "    }";
 
-    float triangleCoords[] = {
-            1.0f, 1.0f, 0.0f, // top
-            -1.0f, -1.0f, 0.0f, // bottom left
-            1.0f, -1.0f, 0.0f, // bottom right
-            -1.0f, 1.0f, 0.0f
+    private final float[] sPos = {
+            -1.0f, 1.0f,    //左上角
+            -1.0f, -1.0f,   //左下角
+            1.0f, 1.0f,     //右上角
+            1.0f, -1.0f     //右下角
     };
 
-    //设置颜色
-    float color[] = {
-            0.0f, 1.0f, 0.0f, 1.0f,
-            1.0f, 0.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f
+    private final float[] sCoord = {
+            0.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f,
     };
 
-    final short index[] = {
-            0, 1, 2,
-            0, 1, 3
-    };
+    public MyRender(Bitmap bitmap) {
+        this.mBitmap = bitmap;
+    }
+
+    private Bitmap mBitmap;
+
+    private int textureId;
 
     private ShortBuffer indexBuffer;
 
     private FloatBuffer mVertexBuffer;
 
-    private FloatBuffer mColorBuffer;
+    private FloatBuffer mCoordBuffer;
 
     private int mProgram;
 
     private int mPositionHandle;
 
-    private int mColorHandle;
+    private int mTextureHandle;
 
     private int mMatrixHandler;
 
@@ -101,28 +110,44 @@ public class MyRender implements GLSurfaceView.Renderer {
         return shader;
     }
 
+    private int createTexture() {
+        int[] texture = new int[1];
+        if (mBitmap != null && !mBitmap.isRecycled()) {
+            //生成纹理
+            GLES20.glGenTextures(1, texture, 0);
+            //生成纹理
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+            //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+            //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            //设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            //设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            //根据以上指定的参数，生成一个2D纹理
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, mBitmap, 0);
+            return texture[0];
+        }
+        return 0;
+    }
+
     private void createProgram() {
         //将背景设置为灰色
         GLES20.glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         //申请底层空间
-        ByteBuffer bb = ByteBuffer.allocateDirect(triangleCoords.length * 4);
+        ByteBuffer bb = ByteBuffer.allocateDirect(sPos.length * 4);
         bb.order(ByteOrder.nativeOrder());
         //将坐标数据转换为FloatBuffer，用以传入给OpenGL ES程序
         mVertexBuffer = bb.asFloatBuffer();
-        mVertexBuffer.put(triangleCoords);
+        mVertexBuffer.put(sPos);
         mVertexBuffer.position(0);
 
-        ByteBuffer dd = ByteBuffer.allocateDirect(color.length * 4);
+        ByteBuffer dd = ByteBuffer.allocateDirect(sCoord.length * 4);
         dd.order(ByteOrder.nativeOrder());
-        mColorBuffer = dd.asFloatBuffer();
-        mColorBuffer.put(color);
-        mColorBuffer.position(0); //获取片元着色器的vColor成员的句柄
-
-        ByteBuffer cc = ByteBuffer.allocateDirect(index.length * 2);
-        cc.order(ByteOrder.nativeOrder());
-        indexBuffer = cc.asShortBuffer();
-        indexBuffer.put(index);
-        indexBuffer.position(0);
+        mCoordBuffer = dd.asFloatBuffer();
+        mCoordBuffer.put(sCoord);
+        mCoordBuffer.position(0); //获取片元着色器的vColor成员的句柄
 
         int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, mVertexShaderCode);
         int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, mFragmentShaderCode);
@@ -143,10 +168,10 @@ public class MyRender implements GLSurfaceView.Renderer {
 
         //获取顶点着色器的vPosition成员句柄
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
-        //获取片元着色器的vColor成员的句柄
-        mColorHandle = GLES20.glGetAttribLocation(mProgram, "aColor");
 
         mMatrixHandler = GLES20.glGetUniformLocation(mProgram, "vMatrix");
+
+        mTextureHandle = GLES20.glGetAttribLocation(mProgram, "vCoordinate");
     }
 
     private void draw() {
@@ -158,21 +183,25 @@ public class MyRender implements GLSurfaceView.Renderer {
 
         //启用三角形顶点的句柄
         GLES20.glEnableVertexAttribArray(mPositionHandle);
-        //准备三角形的坐标数据
-        GLES20.glVertexAttribPointer(mPositionHandle, 3,
+        GLES20.glEnableVertexAttribArray(mTextureHandle);
+
+        GLES20.glUniform1i(mTextureHandle, 0);
+        textureId = createTexture();
+
+        //传入顶点坐标
+        GLES20.glVertexAttribPointer(mPositionHandle, 2,
                 GLES20.GL_FLOAT, false,
                 0, mVertexBuffer);
-
-        GLES20.glEnableVertexAttribArray(mColorHandle);
-        //设置绘制三角形的颜色
-        GLES20.glVertexAttribPointer(mColorHandle, 4,
+        //传入纹理坐标
+        GLES20.glVertexAttribPointer(mTextureHandle, 2,
                 GLES20.GL_FLOAT, false,
-                0, mColorBuffer);
-        //绘制三角形
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, index.length, GLES20.GL_UNSIGNED_SHORT, indexBuffer);
+                0, mCoordBuffer);
+
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
         //禁止顶点数组的句柄
         GLES20.glDisableVertexAttribArray(mPositionHandle);
-        GLES20.glDisableVertexAttribArray(mColorHandle);
+        GLES20.glDisableVertexAttribArray(mTextureHandle);
     }
 
     @Override
@@ -187,9 +216,11 @@ public class MyRender implements GLSurfaceView.Renderer {
         float[] mProjectMatrix = new float[16];
         float[] mViewMatrix = new float[16];
 
+        int w = mBitmap.getWidth();
+        int h = mBitmap.getHeight();
+        float sWH = w / (float) h;
+        float sWidthHeight = width / (float) height;
         if (width > height) {
-            float sWH = 1f;
-            float sWidthHeight = width / (float) height;
             if (sWH > sWidthHeight) {
                 Matrix.orthoM(mProjectMatrix, 0,
                         -sWidthHeight * sWH, sWidthHeight * sWH, -1, 1, 3, 7);
@@ -198,8 +229,6 @@ public class MyRender implements GLSurfaceView.Renderer {
                         -sWidthHeight / sWH, sWidthHeight / sWH, -1, 1, 3, 7);
             }
         } else {
-            float sWH = 1f;
-            float sWidthHeight = width / (float) height;
             if (sWH > sWidthHeight) {
                 Matrix.orthoM(mProjectMatrix, 0,
                         -1, 1, -1 / sWidthHeight * sWH, 1 / sWidthHeight * sWH, 3, 7);
