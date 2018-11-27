@@ -29,13 +29,19 @@ public class MyRender implements GLSurfaceView.Renderer {
 
     private int mProgram;
 
-    private Bitmap mBitmap;
+    private Bitmap mBitmap1;
+
+    private Bitmap mBitmap2;
 
     private int mPositionHandler;
 
     private int mCoordHandler;
 
     private int mTextureHandler;
+
+    private int mCoordHandler2;
+
+    private int mTextureHandler2;
 
     private int mMatrixHandler;
 
@@ -55,10 +61,11 @@ public class MyRender implements GLSurfaceView.Renderer {
             1.0f, 1.0f,
     };
 
-    public MyRender(String v, String f, Bitmap bitmap) {
+    public MyRender(String v, String f, Bitmap bitmap1, Bitmap bitmap2) {
         this.mVertexShaderCode = v;
         this.mFragmentShaderCode = f;
-        this.mBitmap = bitmap;
+        this.mBitmap1 = bitmap1;
+        this.mBitmap2 = bitmap2;
     }
 
     /**
@@ -156,6 +163,10 @@ public class MyRender implements GLSurfaceView.Renderer {
 
         mTextureHandler = GLES20.glGetUniformLocation(mProgram, "vTexture");
 
+        mCoordHandler2 = GLES20.glGetAttribLocation(mProgram, "vCoordinate2");
+
+        mTextureHandler2 = GLES20.glGetUniformLocation(mProgram, "vTexture2");
+
         GLES20.glEnableVertexAttribArray(mPositionHandler);
         //传入顶点坐标
         GLES20.glVertexAttribPointer(mPositionHandler, 2,
@@ -167,9 +178,17 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(mCoordHandler, 2,
                 GLES20.GL_FLOAT, false,
                 0, mCoordBuffer);
+
+        GLES20.glEnableVertexAttribArray(mTextureHandler2);
+        //传入纹理坐标
+        GLES20.glVertexAttribPointer(mCoordHandler2, 2,
+                GLES20.GL_FLOAT, false,
+                0, mCoordBuffer);
     }
 
     int mTextureId;
+
+    int mTextureId2;
 
     private void draw() {
         //将程序加入到OpenGLES2.0环境
@@ -179,6 +198,12 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glUniformMatrix4fv(mMatrixHandler, 1, false, mMVPMatrix, 0);
 
         GLES20.glUniform1i(mTextureHandler, 0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId);
+
+        GLES20.glUniform1i(mTextureHandler2, 1);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId2);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -195,8 +220,8 @@ public class MyRender implements GLSurfaceView.Renderer {
         float[] mProjectMatrix = new float[16];
         float[] mViewMatrix = new float[16];
 
-        int w = mBitmap.getWidth();
-        int h = mBitmap.getHeight();
+        int w = mBitmap1.getWidth();
+        int h = mBitmap1.getHeight();
         float sWH = w / (float) h;
         float sWidthHeight = width / (float) height;
         if (width > height) {
@@ -224,8 +249,10 @@ public class MyRender implements GLSurfaceView.Renderer {
         //计算变换矩阵
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
 
-        mTextureId = createTexture(mBitmap);
-        mBitmap.recycle();
+        mTextureId = createTexture(mBitmap1);
+        mBitmap1.recycle();
+        mTextureId2 = createTexture(mBitmap2);
+        mBitmap2.recycle();
     }
 
     @Override

@@ -21,7 +21,8 @@ public class MainActivity extends AppCompatActivity {
         String vertex = getFromRaw(R.raw.vertex);
         String fragment = getFromRaw(R.raw.fragment);
         mGlv.setRenderer(new MyRender(vertex, fragment,
-                BitmapFactory.decodeResource(getResources(), R.drawable.s)));
+                BitmapFactory.decodeResource(getResources(), R.drawable.s),
+                BitmapFactory.decodeResource(getResources(), R.drawable.n)));
         mGlv.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 
