@@ -33,6 +33,8 @@ public class MyRender implements GLSurfaceView.Renderer {
 
     private int mPositionHandler;
 
+    private int mCoordHandler;
+
     private int mTextureHandler;
 
     private int mMatrixHandler;
@@ -150,8 +152,24 @@ public class MyRender implements GLSurfaceView.Renderer {
 
         mMatrixHandler = GLES20.glGetUniformLocation(mProgram, "vMatrix");
 
-        mTextureHandler = GLES20.glGetAttribLocation(mProgram, "vCoordinate");
+        mCoordHandler = GLES20.glGetAttribLocation(mProgram, "vCoordinate");
+
+        mTextureHandler = GLES20.glGetUniformLocation(mProgram, "vTexture");
+
+        GLES20.glEnableVertexAttribArray(mPositionHandler);
+        //传入顶点坐标
+        GLES20.glVertexAttribPointer(mPositionHandler, 2,
+                GLES20.GL_FLOAT, false,
+                0, mVertexBuffer);
+
+        GLES20.glEnableVertexAttribArray(mTextureHandler);
+        //传入纹理坐标
+        GLES20.glVertexAttribPointer(mCoordHandler, 2,
+                GLES20.GL_FLOAT, false,
+                0, mCoordBuffer);
     }
+
+    int mTextureId;
 
     private void draw() {
         //将程序加入到OpenGLES2.0环境
@@ -160,26 +178,9 @@ public class MyRender implements GLSurfaceView.Renderer {
         //指定vMatrix的值
         GLES20.glUniformMatrix4fv(mMatrixHandler, 1, false, mMVPMatrix, 0);
 
-        //启用三角形顶点的句柄
-        GLES20.glEnableVertexAttribArray(mPositionHandler);
-        GLES20.glEnableVertexAttribArray(mTextureHandler);
-
         GLES20.glUniform1i(mTextureHandler, 0);
 
-        //传入顶点坐标
-        GLES20.glVertexAttribPointer(mPositionHandler, 2,
-                GLES20.GL_FLOAT, false,
-                0, mVertexBuffer);
-        //传入纹理坐标
-        GLES20.glVertexAttribPointer(mTextureHandler, 2,
-                GLES20.GL_FLOAT, false,
-                0, mCoordBuffer);
-
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
-        //禁止顶点数组的句柄
-        GLES20.glDisableVertexAttribArray(mPositionHandler);
-        GLES20.glDisableVertexAttribArray(mTextureHandler);
     }
 
     @Override
@@ -223,7 +224,7 @@ public class MyRender implements GLSurfaceView.Renderer {
         //计算变换矩阵
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
 
-        createTexture(mBitmap);
+        mTextureId = createTexture(mBitmap);
         mBitmap.recycle();
     }
 
