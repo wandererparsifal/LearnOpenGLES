@@ -208,36 +208,13 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glViewport(0, 0, width, height);
 
         float[] mProjectMatrix = new float[16];
-        float[] mViewMatrix = new float[16];
+        float[] mCameraMatrix = new float[16];
 
-        int w = parameters.getPreviewSize().width;
-        int h = parameters.getPreviewSize().height;
-        float sWH = w / (float) h;
-        float sWidthHeight = width / (float) height;
-        if (width > height) {
-            if (sWH > sWidthHeight) {
-                Matrix.orthoM(mProjectMatrix, 0,
-                        -sWidthHeight * sWH, sWidthHeight * sWH, -1, 1, 3, 7);
-            } else {
-                Matrix.orthoM(mProjectMatrix, 0,
-                        -sWidthHeight / sWH, sWidthHeight / sWH, -1, 1, 3, 7);
-            }
-        } else {
-            if (sWH > sWidthHeight) {
-                Matrix.orthoM(mProjectMatrix, 0,
-                        -1, 1, -1 / sWidthHeight * sWH, 1 / sWidthHeight * sWH, 3, 7);
-            } else {
-                Matrix.orthoM(mProjectMatrix, 0,
-                        -1, 1, -sWH / sWidthHeight, sWH / sWidthHeight, 3, 7);
-            }
-        }
-        //设置相机位置 https://blog.csdn.net/kkae8643150/article/details/52805738 Matrix.setLookAtM解析
-        Matrix.setLookAtM(mViewMatrix, 0,
-                0, 0, 7f,
-                0f, 0f, 0f,
-                0f, 1.0f, 0.0f);
-        //计算变换矩阵
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mViewMatrix, 0);
+        float ratio = (float) width / height;
+        Matrix.orthoM(mProjectMatrix, 0, -1, 1, -ratio, ratio, 1, 7);// 3和7代表远近视点与眼睛的距离，非坐标点
+        Matrix.setLookAtM(mCameraMatrix, 0, 0, 0, 3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);// 3代表眼睛的坐标点
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectMatrix, 0, mCameraMatrix, 0);
+        Matrix.rotateM(mMVPMatrix, 0, 270, 0, 0, 1);
 
         parameters.setFocusMode("auto");
         mCamera.setParameters(parameters);
