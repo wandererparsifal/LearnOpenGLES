@@ -1,51 +1,49 @@
 package com.example.test6;
 
-import android.hardware.Camera;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
-import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Camera mCamera;
+    private GLSurfaceView mGlv;
 
-    SurfaceHolder mSurfaceHolder;
+    private MyRender myRender;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mGlv = findViewById(R.id.glv);
+        mGlv.setEGLContextClientVersion(2);
 
-        SurfaceView surfaceView = findViewById(R.id.sv);
-        mSurfaceHolder = surfaceView.getHolder();
-        mSurfaceHolder.addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                mCamera = Camera.open(0);
-                try {
-                    mCamera.setPreviewDisplay(holder);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                mCamera.setDisplayOrientation(90);
-            }
+        String vertex = getFromRaw(R.raw.vertex);
+        String fragment = getFromRaw(R.raw.fragment);
 
+        myRender = new MyRender(vertex, fragment);
+        myRender.setOnFrameListener(new OnFrameListener() {
             @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                Camera.Parameters parameters = mCamera.getParameters();
-                parameters.setFocusMode("auto");
-                mCamera.setParameters(parameters);
-                mCamera.startPreview();
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-                mCamera.release();
-                mCamera = null;
+            public void onFrame() {
+                mGlv.requestRender();
             }
         });
+        mGlv.setRenderer(myRender);
+        mGlv.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+    }
+
+    public String getFromRaw(int id) {
+        String result = "";
+        try {
+            InputStream in = getResources().openRawResource(id);
+            int lenght = in.available();
+            byte[] buffer = new byte[lenght];
+            in.read(buffer);
+            result = new String(buffer, "utf-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 }
