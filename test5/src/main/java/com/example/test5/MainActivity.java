@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 
 import java.io.InputStream;
@@ -17,6 +18,10 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private GLSurfaceView mGlv;
+
+    private MyRender myRender;
+
+    private Handler mHandler;
 
     private SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss", Locale.getDefault());
 
@@ -30,16 +35,27 @@ public class MainActivity extends AppCompatActivity {
         String vertex = getFromRaw(R.raw.vertex);
         String fragment = getFromRaw(R.raw.fragment);
 
-        mGlv.setRenderer(new MyRender(vertex, fragment,
+        myRender = new MyRender(vertex, fragment,
                 BitmapFactory.decodeResource(getResources(), R.drawable.s),
-                getBitmap(Color.RED)));
+                getBitmap(Color.RED));
+        mGlv.setRenderer(myRender);
         mGlv.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+
+        mHandler = new Handler();
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                myRender.update(getBitmap(Color.RED));
+                mGlv.requestRender();
+                mHandler.postDelayed(this, 1000);
+            }
+        }, 1000);
     }
 
     public Bitmap getBitmap(int color) {
         Paint p = new Paint();
         p.setColor(color);
-        p.setTextSize(50);
+        p.setTextSize(32);
         Bitmap bitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         String time = mDateFormat.format(Calendar.getInstance().getTime());

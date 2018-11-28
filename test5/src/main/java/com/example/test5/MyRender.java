@@ -120,6 +120,10 @@ public class MyRender implements GLSurfaceView.Renderer {
         return 0;
     }
 
+    public void update(Bitmap bitmap) {
+        mBitmap2 = bitmap;
+    }
+
     private void createProgram() {
         //将背景设置为灰色
         GLES20.glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -251,12 +255,12 @@ public class MyRender implements GLSurfaceView.Renderer {
 
         mTextureId = createTexture(mBitmap1);
         mBitmap1.recycle();
-        mTextureId2 = createTexture(mBitmap2);
-        mBitmap2.recycle();
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        mTextureId2 = createTexture(mBitmap2);
+        mBitmap2.recycle();
         draw();
     }
 }
