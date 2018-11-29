@@ -126,13 +126,17 @@ public class MyRender implements GLSurfaceView.Renderer {
         return texture[0];
     }
 
-    private int createTexture(Bitmap bitmap) {
+    private int createTexture(Bitmap bitmap, boolean create, int textureId) {
         int[] texture = new int[1];
         if (bitmap != null && !bitmap.isRecycled()) {
-            //生成纹理
-            GLES20.glGenTextures(1, texture, 0);
-            //生成纹理
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+            if (create) {
+                //生成纹理
+                GLES20.glGenTextures(1, texture, 0);
+                //生成纹理
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+            } else {
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
+            }
             //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
             GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
             //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
@@ -143,7 +147,11 @@ public class MyRender implements GLSurfaceView.Renderer {
             GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
             //根据以上指定的参数，生成一个2D纹理
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-            return texture[0];
+            if (create) {
+                return texture[0];
+            } else {
+                return textureId;
+            }
         }
         return 0;
     }
@@ -250,6 +258,8 @@ public class MyRender implements GLSurfaceView.Renderer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        mTextureId2 = createTexture(mBitmap2, true, 0);
     }
 
     @Override
@@ -274,7 +284,7 @@ public class MyRender implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        mTextureId2 = createTexture(mBitmap2);
+        createTexture(mBitmap2, false, mTextureId2);
         draw();
     }
 }
