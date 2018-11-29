@@ -1,10 +1,12 @@
 package com.example.test6;
 
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
@@ -26,6 +28,14 @@ public class MyRender implements GLSurfaceView.Renderer {
     private SurfaceTexture mSurfaceTexture;
 
     private OnFrameListener mOnFrameListener;
+
+    private Bitmap mBitmap2;
+
+    private int mCoordHandler2;
+
+    private int mTextureHandler2;
+
+    private int mTextureId2;
 
     private String mVertexShaderCode;
 
@@ -61,13 +71,18 @@ public class MyRender implements GLSurfaceView.Renderer {
             1.0f, 1.0f,
     };
 
-    public MyRender(String v, String f) {
+    public MyRender(String v, String f, Bitmap bitmap) {
         this.mVertexShaderCode = v;
         this.mFragmentShaderCode = f;
+        this.mBitmap2 = bitmap;
     }
 
     public void setOnFrameListener(OnFrameListener listener) {
         this.mOnFrameListener = listener;
+    }
+
+    public void update(Bitmap bitmap) {
+        mBitmap2 = bitmap;
     }
 
     /**
@@ -109,6 +124,28 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         return texture[0];
+    }
+
+    private int createTexture(Bitmap bitmap) {
+        int[] texture = new int[1];
+        if (bitmap != null && !bitmap.isRecycled()) {
+            //生成纹理
+            GLES20.glGenTextures(1, texture, 0);
+            //生成纹理
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+            //设置缩小过滤为使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+            //设置放大过滤为使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            //设置环绕方向S，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            //设置环绕方向T，截取纹理坐标到[1/2n,1-1/2n]。将导致永远不会与border融合
+            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            //根据以上指定的参数，生成一个2D纹理
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+            return texture[0];
+        }
+        return 0;
     }
 
     private void createProgram() {
@@ -154,6 +191,10 @@ public class MyRender implements GLSurfaceView.Renderer {
 
         mTextureHandler = GLES20.glGetUniformLocation(mProgram, "vTexture");
 
+        mCoordHandler2 = GLES20.glGetAttribLocation(mProgram, "vCoordinate2");
+
+        mTextureHandler2 = GLES20.glGetUniformLocation(mProgram, "vTexture2");
+
         GLES20.glEnableVertexAttribArray(mPositionHandler);
         //传入顶点坐标
         GLES20.glVertexAttribPointer(mPositionHandler, 2,
@@ -163,6 +204,12 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glEnableVertexAttribArray(mTextureHandler);
         //传入纹理坐标
         GLES20.glVertexAttribPointer(mCoordHandler, 2,
+                GLES20.GL_FLOAT, false,
+                0, mCoordBuffer);
+
+        GLES20.glEnableVertexAttribArray(mTextureHandler2);
+        //传入纹理坐标
+        GLES20.glVertexAttribPointer(mCoordHandler2, 2,
                 GLES20.GL_FLOAT, false,
                 0, mCoordBuffer);
     }
@@ -176,6 +223,10 @@ public class MyRender implements GLSurfaceView.Renderer {
         GLES20.glUniformMatrix4fv(mMatrixHandler, 1, false, mMVPMatrix, 0);
 
         mSurfaceTexture.updateTexImage();
+
+        GLES20.glUniform1i(mTextureHandler2, 1);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId2);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -223,6 +274,7 @@ public class MyRender implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        mTextureId2 = createTexture(mBitmap2);
         draw();
     }
 }
